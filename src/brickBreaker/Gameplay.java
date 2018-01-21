@@ -23,15 +23,16 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener {
 	
 	private int playerX = 310;
 	
-	private int ballposX = 120;
-	private int ballposY = 350;
-	private int ballXdir = -2;
-	private int ballYdir = -2;
+	private Ball ball;
 	
 	private MapGenerator map;
 	
 	public Gameplay() {
 		map = new MapGenerator(3, 7);
+		
+		ball = new Ball(120, 350, -2, -2);
+		paddle = new Paddle();
+		
 		addKeyListener(this);
 		setFocusable(true);
 		setFocusTraversalKeysEnabled(true);
@@ -61,29 +62,18 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener {
 		// the paddle
 		g.setColor(Color.black);
 		g.fillRect(playerX, 550, 100, 8);
+		paddle.draw(g);
 		
-		// the ball
-		g.setColor(Color.blue);
-		g.fillOval(ballposX, ballposY, 20, 20);
-
-		if (ballposY > 570 || totalBricks == 0) {
-			play = false;
-			ballXdir = 0;
-			ballYdir = 0;
-			g.setColor(Color.red);
-			g.setFont(new Font("arial", Font.BOLD, 30));
-			g.drawString("Enter to Restart", 230, 350);
-		}
+		ball.draw(g);
 		
 		g.dispose();
 	}
 
 	@Override
 	public void actionPerformed(ActionEvent e) {
-		eventLoop.start();
 		if (play) {
-			if (new Rectangle(ballposX, ballposY, 20, 20).intersects(playerX, 550, 100, 8)) {
-				ballYdir *= -1;
+			if (new Rectangle(ball.x, ball.y, 20, 20).intersects(playerX, 550, 100, 8)) {
+				ball.yDir *= -1;
 			}
 			
 			A: for (int i = 0; i < map.map.length; i ++) {
@@ -95,7 +85,7 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener {
 						int brickHeight = map.brickHeight;
 						
 						Rectangle rect = new Rectangle(brickX, brickY, brickWidth, brickHeight);
-						Rectangle ballRect = new Rectangle(ballposX, ballposY, 20, 20);
+						Rectangle ballRect = new Rectangle(ball.x, ball.y, 20, 20);
 						Rectangle brickRect = rect;
 						
 						if (ballRect.intersects(brickRect)) {
@@ -103,10 +93,10 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener {
 							totalBricks -= 1;
 							score += 5;
 							
-							if (ballposX + 19 <= brickRect.x || ballposX + 1 >= brickRect.x + brickRect.width) {
-								ballXdir *= -1;
+							if (ball.x + 19 <= brickRect.x || ball.x + 1 >= brickRect.x + brickRect.width) {
+								ball.xDir *= -1;
 							} else {
-								ballYdir *= -1;
+								ball.yDir *= -1;
 							}
 							break A;
 						}
@@ -114,16 +104,14 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener {
 				}
 			}
 			
-			ballposX += ballXdir;
-			ballposY += ballYdir;
-			if (ballposX < 0) {
-				ballXdir *= -1;
-			}
-			if (ballposY < 0) {
-				ballYdir *= -1;
-			}
-			if (ballposX > 670) {
-				ballXdir *= -1;
+			ball.moveInFrame(670);
+			
+			if (ball.y > 570 || totalBricks == 0) {
+				play = false;
+				ball.stop();
+//				g.setColor(Color.red);
+//				g.setFont(new Font("arial", Font.BOLD, 30));
+//				g.drawString("Enter to Restart", 230, 350);
 			}
 		}
 		repaint();
@@ -154,10 +142,10 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener {
 		if (e.getKeyCode() == KeyEvent.VK_ENTER) {
 			if (!play) {
 				play = true;
-				ballposX = 120;
-				ballposY = 350;
-				ballXdir = -1;
-				ballYdir = -2;
+				ball.x = 120;
+				ball.y = 350;
+				ball.xDir = -1;
+				ball.yDir = -2;
 				playerX = 310;
 				score = 0;
 				totalBricks = 21;
